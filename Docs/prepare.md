@@ -304,7 +304,7 @@ esbuild(雛形由来)も `@vscode/vsce-sign` / `keytar`(vsce 由来)も、すべ
 (`[WARN] The "pnpm" field in package.json is no longer read by pnpm` が出る)。
 `pnpm install` のたびに pnpm が `pnpm-workspace.yaml` に以下のような
 プレースホルダを自動追記するので、`set this to true or false` を実際の
-真偽値(`true`=ビルド許可 / `false`=意図的にスキップ)に **埋める**。
+真偽値(`true`=ビルド許可 / `false`=意図的にスキップ)に埋める。
 
 `prj/safeexternalopener/pnpm-workspace.yaml`:
 
@@ -319,7 +319,14 @@ allowBuilds:
 ビルドが走りエラーも消える。
 
 ```powershell
-mise exec -- pnpm -C safeexternalopener install
+[in0ho1no] PS D:\work\NodeJS\04_SafeExternalOpener\prj> mise exec -- pnpm -C safeexternalopener install
+✓ Lockfile passes supply-chain policies (verified 5m ago)
+Lockfile is up to date, resolution step is skipped
+Already up to date
+node_modules/.pnpm/@vscode+vsce-sign@2.0.9/node_modules/@vscode/vsce-sign: Running postinstall script, done in 165ms
+node_modules/.pnpm/esbuild@0.28.1/node_modules/esbuild: Running postinstall script, done in 404ms
+Done in 2.8s using pnpm v11.9.0
+[in0ho1no] PS D:\work\NodeJS\04_SafeExternalOpener\prj> 
 ```
 
 ##### 補足: keytar をスキップしてよい理由
