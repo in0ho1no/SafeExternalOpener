@@ -178,6 +178,9 @@ Is this OK? (yes)
 
 ```powershell
 [in0ho1no] PS D:\work\NodeJS\04_SafeExternalOpener\prj> mise exec -- npx --package yo --package generator-code -- yo code
+Need to install the following packages:
+generator-code@1.12.0
+Ok to proceed? (y) y
 
      _-----_     ╭──────────────────────────╮
     |       |    │   Welcome to the Visual  │
@@ -185,16 +188,15 @@ Is this OK? (yes)
    `---------´   │        generator!        │
     ( _´U`_ )    ╰──────────────────────────╯
     /___A___\   /
-     |  ~  |
-   __'.___.'__
- ´   `  |° ´ Y `
+     |  ~  |     
+   __'.___.'__   
+ ´   `  |° ´ Y ` 
 
 `list` prompt is deprecated. Use `select` prompt instead.
 ✔ What type of extension do you want to create? New Extension (TypeScript)
 ✔ What's the name of your extension? SafeExternalOpener
 ✔ What's the identifier of your extension? safeexternalopener
-✔ What's the description of your extension? Open Office, PDF, and Windows shortcut targets safely from VS Code Explorer with strict extension al
-lowlisting.
+✔ What's the description of your extension? Open Office, PDF, and Windows shortcut targets safely from VS Code Explorer with strict extension allowlisting.
 ✔ Initialize a git repository? Yes
 `list` prompt is deprecated. Use `select` prompt instead.
 ✔ Which bundler to use? esbuild
@@ -223,39 +225,31 @@ Writing in D:\work\NodeJS\04_SafeExternalOpener\prj\safeexternalopener...
 Changes to package.json were detected.
 
 Running pnpm install for you to install the required dependencies.
-
-   ╭───────────────────────────────────────────╮
-   │                                           │
-   │    Update available! 11.6.0 → 11.7.0.     │
-   │    Changelog: https://pnpm.io/v/11.7.0    │
-   │   To update, run: pnpm add -g @pnpm/exe   │
-   │                                           │
-   ╰───────────────────────────────────────────╯
-
+[WARN] Request took 14777ms: https://registry.npmjs.org/@typescript-eslint%2Ftype-utils
 [WARN] 1 deprecated subdependencies found: glob@10.5.0
-Packages: +359
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-Progress: resolved 385, reused 0, downloaded 359, added 359, done
+Packages: +349
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 374, reused 305, downloaded 44, added 349, done
 
 devDependencies:
 + @types/mocha 10.0.10
-+ @types/node 22.19.21 (25.9.3 is available)
-+ @types/vscode 1.120.0
-+ @vscode/test-cli 0.0.12
-+ @vscode/test-electron 2.5.2 (3.0.0 is available)
-+ esbuild 0.27.7 (0.28.1 is available)
-+ eslint 9.39.4 (10.5.0 is available)
++ @types/node 24.13.2 (26.0.1 is available)
++ @types/vscode 1.125.0
++ @vscode/test-cli 0.0.15
++ @vscode/test-electron 3.0.0
++ esbuild 0.28.1
++ eslint 10.6.0
 + npm-run-all 4.1.5
-+ typescript 5.9.3 (6.0.3 is available)
-+ typescript-eslint 8.61.0
++ typescript 6.0.3
++ typescript-eslint 8.62.0 (8.62.1 is available)
 
-[ERR_PNPM_IGNORED_BUILDS] Ignored build scripts: esbuild@0.27.7
+[ERR_PNPM_IGNORED_BUILDS] Ignored build scripts: esbuild@0.28.1
 
 Run "pnpm approve-builds" to pick which dependencies should be allowed to run scripts.
-Error code
+Error code 
 
 Command failed with exit code 1: pnpm install
-[in0ho1no] PS D:\work\NodeJS\04_SafeExternalOpener\prj>
+[in0ho1no] PS D:\work\NodeJS\04_SafeExternalOpener\prj> 
 ```
 
 (末尾の `pnpm install` 失敗は後述の「生じるエラーへの対処」で解消する)
