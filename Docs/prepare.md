@@ -23,7 +23,7 @@ https://mise.jdx.dev/getting-started.html
 上記ページの手順に従いwingetでインストールする
 
 ```powershell
-PS C:\Users\seigy> winget install jdx.mise
+PS C:\Users\> winget install jdx.mise
 既存のパッケージが既にインストールされています。インストールされているパッケージ...をアップグレードしようとしています
 見つかりました mise-en-place [jdx.mise] バージョン 2026.6.10
 このアプリケーションは所有者からライセンス供与されます。
@@ -40,7 +40,7 @@ Microsoft はサードパーティのパッケージに対して責任を負わ�
 コマンド ライン エイリアスが追加されました: "mise-shim"
 コマンド ライン エイリアスが追加されました: "mise"
 インストールが完了しました
-PS C:\Users\seigy>
+PS C:\Users\>
 ```
 
 この後はターミナル・コマンドプロンプトを再起動させておく。  
@@ -156,28 +156,25 @@ Is this OK? (yes)
 
 ## VSCode拡張機能の開発環境
 
-### VSCode拡張機能開発に必要なパッケージのインストール
+### プロジェクト構成方針
 
-以下コマンドにより必要なパッケージをインストールする
+このリポジトリは「親=作業手順・git・インフラの入れ物 / 子=拡張本体」という入れ子構成にする。
 
-```powershell
-[in0ho1no] PS D:\work\NodeJS\04_SafeExternalOpener\prj> mise exec -- npm install --save-dev @vscode/vsce
+- ルート `prj/` は Node プロジェクトにしない。
+  `Docs/`、`.github/`、`docker/`、`git-setup/`、`*.code-workspace` 等の入れ物に徹する。
+  ルートに `package.json` / `node_modules` / ロックファイルを置かない。
+- 拡張本体 `prj/safeexternalopener/` を Node / pnpm プロジェクトとする。
+- 公開ツール `@vscode/vsce` も拡張本体の `devDependencies` に入れ、
+  `safeexternalopener/` の中で `vsce package` / `vsce publish` を実行する。
 
-added 114 packages, removed 521 packages, and audited 290 packages in 15s
+こうすると `node_modules`・ロックファイル・`pnpm-workspace.yaml` が拡張側の1セットに集約され、
+パッケージマネージャの混在(npm と pnpm の併用)や設定場所のミスマッチが起きない。
 
-85 packages are looking for funding
-  run `npm fund` for details
+> 手順の順番に注意:
+> 先に雛形を生成(`yo code`)してから、生成された `safeexternalopener/` の中で
+> 依存・公開ツールを入れる。`@vscode/vsce` を先にルートへ入れてはいけない。
 
-found 0 vulnerabilities
-npm warn allow-scripts 2 packages have install scripts not yet covered by allowScripts:
-npm warn allow-scripts   keytar@7.9.0 (install: node-gyp rebuild)
-npm warn allow-scripts   @vscode/vsce-sign@2.0.9 (postinstall: node ./src/postinstall.js)
-npm warn allow-scripts
-npm warn allow-scripts Run `npm approve-scripts --allow-scripts-pending` to review, or `npm approve-scripts <pkg>` to allow.
-[in0ho1no] PS D:\work\NodeJS\04_SafeExternalOpener\prj>
-```
-
-### 開発環境として保持する必要のない1度のみ実行する
+### 拡張機能の雛形を生成する(開発環境として保持する必要のない1度のみ実行)
 
 ```powershell
 [in0ho1no] PS D:\work\NodeJS\04_SafeExternalOpener\prj> mise exec -- npx --package yo --package generator-code -- yo code
@@ -261,20 +258,73 @@ Command failed with exit code 1: pnpm install
 [in0ho1no] PS D:\work\NodeJS\04_SafeExternalOpener\prj>
 ```
 
-#### 生じるエラーへの対処
+(末尾の `pnpm install` 失敗は後述の「生じるエラーへの対処」で解消する)
 
-safeexternalopener/package.json に以下を追記:
+### 公開ツール `@vscode/vsce` を拡張本体に追加する
 
-```json
-"pnpm": {
-  "onlyBuiltDependencies": ["esbuild", "@vscode/vsce-sign"]
-}
+構成方針どおり、`@vscode/vsce` はルートではなく 拡張ディレクトリ
+`safeexternalopener/` の `devDependencies`に入れる。pnpm で追加する。
+
+```powershell
+mise exec -- pnpm -C safeexternalopener add -D @vscode/vsce
 ```
 
-その後:
+`@vscode/vsce` は `@vscode/vsce-sign`(署名検証)と `keytar`(PAT保存)を連れてくるため、
+この直後にも `[ERR_PNPM_IGNORED_BUILDS]` が出る。次節でまとめて対処する。
 
-mise exec -- pnpm install
+#### 生じるエラーへの対処
 
+`[ERR_PNPM_IGNORED_BUILDS] Ignored build scripts: ...` というエラーが出る。
+これは pnpm v10 以降のセキュリティ機能で、依存パッケージの install/postinstall
+スクリプトをデフォルトで全てブロックするために起きる。
+ネイティブバイナリを配置する必要のあるパッケージ(esbuild など)はビルドを許可する必要がある。
+
+##### ポイント1: 設定は拡張プロジェクト1か所に集約する
+
+構成方針どおり Node / pnpm プロジェクトは `safeexternalopener/` の1つだけなので、
+ビルド許可の設定も `prj/safeexternalopener/pnpm-workspace.yaml` の1か所に書く。
+esbuild(雛形由来)も `@vscode/vsce-sign` / `keytar`(vsce 由来)も、すべてここで扱う。
+
+| 依存 | 出どころ | 扱い |
+|------|----------|------|
+| `esbuild` | 雛形(バンドラ) | `true`(バンドルに必須) |
+| `@vscode/vsce-sign` | `@vscode/vsce` | `true`(公開時の事故防止に許可) |
+| `keytar` | `@vscode/vsce` | `false`(非推奨かつ `vsce login` でしか使わないのでスキップ) |
+
+##### ポイント2: pnpm v11 は `allowBuilds:` マップで指定する
+
+`package.json` の `pnpm.onlyBuiltDependencies` は pnpm v11 では読まれない
+(`[WARN] The "pnpm" field in package.json is no longer read by pnpm` が出る)。
+`pnpm install` のたびに pnpm が `pnpm-workspace.yaml` に以下のような
+プレースホルダを自動追記するので、`set this to true or false` を実際の
+真偽値(`true`=ビルド許可 / `false`=意図的にスキップ)に **埋める**。
+
+`prj/safeexternalopener/pnpm-workspace.yaml`:
+
+```yaml
+allowBuilds:
+  esbuild: true               # バンドルに必須
+  '@vscode/vsce-sign': true   # 公開時の事故防止に許可
+  keytar: false               # 非推奨かつ vsce login でしか使わないのでスキップ
+```
+
+埋めたあと、拡張ディレクトリで以下を実行すると、許可したパッケージの
+ビルドが走りエラーも消える。
+
+```powershell
+mise exec -- pnpm -C safeexternalopener install
+```
+
+##### 補足: keytar をスキップしてよい理由
+
+`keytar` は `vsce login` で PAT(個人アクセストークン)を OS のキーチェーンに
+保存するときだけ使われる。公開は環境変数 `VSCE_PAT` で渡せば keytar に触れない。
+かつ keytar はメンテ終了済みなので、ビルドせずスキップ(`false`)でよい。
+
+```powershell
+$env:VSCE_PAT = "<Azure DevOps で発行したトークン>"
+mise exec -- pnpm -C safeexternalopener exec vsce publish
+```
 
 #### 補足1
 
@@ -295,21 +345,32 @@ webpack が要るのは「Webview に複雑なフロントエンド資産をま�
 
 #### 補足2
 
-選択肢	評価	コメント
-npm	✅ 推奨(無難)	既に使用中。mise/Node 26 に同梱、追加導入ゼロ。@vscode/vsce も標準対応
-pnpm	○ 有力な次点	速い・ディスク効率良い・依存解決が厳密。こだわるなら可
-yarn	△	今あえて選ぶ理由は薄い。Classic は古く、Berry(PnP)は拡張開発で詰まりやすい
+パッケージマネージャの選定 → pnpm を採用。
+
+| 選択肢 | 評価 | コメント |
+|--------|------|----------|
+| pnpm | ✅ 採用 | 速い・ディスク効率良い・依存解決が厳密。雛形(`yo code`)も pnpm を選択でき、`pnpm-workspace.yaml` が生成される。mise で管理可能 |
+| npm | ○ 無難な代替 | Node 同梱で追加導入ゼロ。`@vscode/vsce` も標準対応。こだわりが無ければこれでも可 |
+| yarn | △ | 今あえて選ぶ理由は薄い。Classic は古く、Berry(PnP)は拡張開発で詰まりやすい |
+
 判断理由
-1. 個人プロジェクトかつ規模が小さい
-"SafeExternalOpener" は単一拡張です。pnpm/yarn の主な利点(モノレポ、大量依存、CI高速化)が効きにくく、npm で困りません。
+
+1. mise との統合
+このリポジトリでは別途 pnpm も mise で管理している(「### miseでpnpmをインストール」参照)。
+そのため pnpm を使っても導入・バージョン管理の手間は増えない。
 
 2. vsce との相性
-@vscode/vsce は npm を前提に作られていて一番こなれています。pnpm でも動きますが、シンボリックリンク構造ゆえ vsce package 時に依存が拾えず --no-dependencies 等の追加配慮が必要になる場合があります。バンドラに esbuild を使う前提なら、依存は1ファイルに固められるのでこの問題はほぼ無視できます(=pnpm も実用上問題なし)。
+`@vscode/vsce` は元々 npm 前提で一番こなれており、pnpm はシンボリックリンク構造ゆえ
+`vsce package` 時に依存が拾えず `--no-dependencies` 等の追加配慮が要る場合がある。
+ただし本構成は バンドラに esbuild を使い、配布物を1ファイルに固める前提なので、
+この問題は実用上ほぼ無視できる。
 
-3. mise との統合
-mise は node と一緒に npm を面倒見てくれます。pnpm を使うなら mise use npm:pnpm 等で別途管理する手間が増えます。
+3. pnpm 採用時の注意
+pnpm v10 以降はビルドスクリプトをデフォルトでブロックする。
+本手順では `pnpm-workspace.yaml` の `allowBuilds:` で
+esbuild / @vscode/vsce-sign を許可、keytar をスキップして対処する
+(「#### 生じるエラーへの対処」参照)。
 
-推奨
-特にこだわりがなければ npm:既存の mise exec -- npm ... フローをそのまま継続
-速度・厳密性を重視するなら pnpm:ただし esbuild バンドル前提とし、.vsix 作成時の挙動を一度確認しておく
-yarn は今回は積極的に選ぶ理由がない、という整理です。
+結論
+- 本プロジェクトは pnpm を採用(雛形が pnpm 構成を生成し、mise でも管理済みのため)。
+- 速度・厳密性にこだわらないなら npm でも可。yarn は積極的に選ぶ理由がない。
