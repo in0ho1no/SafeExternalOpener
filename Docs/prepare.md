@@ -260,7 +260,20 @@ Command failed with exit code 1: pnpm install
 `safeexternalopener/` の `devDependencies`に入れる。pnpm で追加する。
 
 ```powershell
-mise exec -- pnpm -C safeexternalopener add -D @vscode/vsce
+[in0ho1no] PS D:\work\NodeJS\04_SafeExternalOpener\prj> mise exec -- pnpm -C safeexternalopener add -D @vscode/vsce
+✓ Lockfile passes supply-chain policies (verified 11m ago)
+[WARN] 3 deprecated subdependencies found: glob@10.5.0, prebuild-install@7.1.3, whatwg-encoding@3.1.1
+Packages: +219 -7
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-------
+Progress: resolved 594, reused 554, downloaded 7, added 219, done
+
+devDependencies:
++ @vscode/vsce 3.9.2
+
+[ERR_PNPM_IGNORED_BUILDS] Ignored build scripts: @vscode/vsce-sign@2.0.9, esbuild@0.28.1, keytar@7.9.0
+
+Run "pnpm approve-builds" to pick which dependencies should be allowed to run scripts.
+[in0ho1no] PS D:\work\NodeJS\04_SafeExternalOpener\prj> 
 ```
 
 `@vscode/vsce` は `@vscode/vsce-sign`(署名検証)と `keytar`(PAT保存)を連れてくるため、
