@@ -506,3 +506,58 @@ MIT License
 - allowlist 外の拡張子は開けない。
 - README に安全性方針が明記されている。
 - SPEC.md がリポジトリに含まれている。
+
+---
+
+## 実装タスク分割（レビュー用）
+
+初期実装を状況把握しやすい単位に分割したもの。現状（2026-07-01 時点）、`safeexternalopener/src/extension.ts` は
+`yo code` 生成直後の Hello World 雛形のみで、以下モジュールは未実装。`package.json` にも
+`explorer/context` メニューの contributes は未定義。
+
+### フェーズ0: 事前調査・意思決定
+
+1. `.lnk` 解決ライブラリの選定
+   - SPEC 記載の候補（`windows-shortcuts` 等）についてライセンス・依存関係の大きさ・
+     メンテナンス状況・「読み取り専用利用が可能か」を確認し、採用ライブラリを決定する。
+   - 新規依存追加に該当するため、採用前にユーザー確認を取る。
+
+### フェーズ1: コア安全ロジック（依存の少ない純粋関数から実装）
+
+2. `allowlist.ts` 作成
+   - `OPENABLE_EXTENSIONS` / `SHORTCUT_TARGET_FILE_EXTENSIONS` の定義のみ。
+3. `validators.ts` 作成
+   - `file` scheme 確認、拡張子照合（小文字化含む）、存在確認、
+     `.lnk` リンク先の許可判定ロジック。
+4. `shortcutResolver.ts` 作成
+   - フェーズ0で選定したライブラリを使い `.lnk` → `TargetPath` を抽出する。
+   - `Arguments` / `WorkingDirectory` / アイコン情報は返却しない、または返却しても未使用とする。
+5. `openExternal.ts` 作成
+   - `vscode.env.openExternal()` の薄いラッパー。
+
+### フェーズ2: 拡張機能本体への統合
+
+6. `extension.ts` 書き換え
+   - `safeOfficeOpener.openSafely` コマンド登録。
+   - 各モジュールを呼び出し、SPEC の「エラー処理」表に沿ったメッセージを表示する。
+7. `package.json` contributes 更新
+   - コマンド定義と `explorer/context` メニュー、`when` 句（対象拡張子の正規表現）を追加。
+
+### フェーズ3: テスト
+
+8. 単体テスト: `validators.test.ts`
+   - allowlist 判定、大文字小文字、`.lnk` リンク先の許可/拒否パターン。
+9. 単体テスト: `shortcutResolver.test.ts`
+   - TargetPath 抽出の正常系・異常系（空/存在しないパス等）。
+10. 結合テスト: `extension.test.ts` 拡充
+    - コンテキストメニューの表示条件、`openExternal()` 呼び出しの確認。
+
+### フェーズ4: 仕上げ
+
+11. `README.md` 更新
+    - 目的、対応拡張子、安全性方針を明記する。
+12. Windows 実機での手動テスト
+    - SPEC の「手動テスト」表に沿って確認する。
+
+各タスクは独立して差分確認・動作確認できる粒度としており、フェーズ1（タスク2〜5）は
+ロジックのみのため確認しやすく、フェーズ2で初めて拡張機能として動作する状態になる。
