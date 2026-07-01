@@ -98,62 +98,6 @@ v26.3.0
 [in0ho1no] PS D:\work\NodeJS\04_SafeExternalOpener\prj>
 ```
 
-### 開発用フォルダ作成
-
-#### 初期化
-
-以下コマンドによりプロジェクトを初期化する。
-
-```powershell
-[in0ho1no] PS D:\work\NodeJS\04_SafeExternalOpener\prj> mise exec -- npm init
-This utility will walk you through creating a package.json file.
-It only covers the most common items, and tries to guess sensible defaults.
-
-See `npm help init` for definitive documentation on these fields and exactly what they do.
-
-Use `npm install <pkg>` afterwards to install a package and save it as a dependency in the package.json file.
-
-Press ^C at any time to quit.
-package name: (prj) SafeExternalOpener
-Sorry, name can no longer contain capital letters.
-package name: (prj) safe-external-opener
-version: (1.0.0) 0.0.1
-description:
-entry point: (index.js)
-test command:
-git repository: (https://github.com/in0ho1no/SafeExternalOpener.git)
-keywords:
-author:
-license: (ISC) MIT
-type: (commonjs)
-About to write to D:\work\NodeJS\04_SafeExternalOpener\prj\package.json:
-
-{
-  "name": "safe-external-opener",
-  "version": "0.0.1",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/in0ho1no/SafeExternalOpener.git"
-  },
-  "author": "",
-  "license": "MIT",
-  "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/in0ho1no/SafeExternalOpener/issues"
-  },
-  "homepage": "https://github.com/in0ho1no/SafeExternalOpener#readme"
-}
-
-
-Is this OK? (yes)
-[in0ho1no] PS D:\work\NodeJS\04_SafeExternalOpener\prj>
-```
-
 ## VSCode拡張機能の開発環境
 
 ### プロジェクト構成方針
