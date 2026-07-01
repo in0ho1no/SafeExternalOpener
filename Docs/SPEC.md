@@ -521,43 +521,68 @@ MIT License
    - SPEC 記載の候補（`windows-shortcuts` 等）についてライセンス・依存関係の大きさ・
      メンテナンス状況・「読み取り専用利用が可能か」を確認し、採用ライブラリを決定する。
    - 新規依存追加に該当するため、採用前にユーザー確認を取る。
+2. UI テスト方式の決定
+   - 自動化対象を次の 2 層に分けて決める。
+   - 必須自動化: `package.json` の contributes / `when` 条件の静的検証、コマンド実行時の
+     `openExternal()` 呼び出し検証。
+   - 追加自動化: Windows 上で Explorer コンテキストメニュー表示を実際に確認する
+     UI スモークテスト。
+   - 追加依存や専用ハーネスが必要な場合は、この時点でユーザー確認を取る。
+3. `.lnk` テストデータ戦略の決定
+   - `.lnk` fixture をリポジトリに置くか、resolver の外部依存を adapter 化して mock 中心で
+     検証するかを決める。
+   - この判断を先に行い、`shortcutResolver.test.ts` を不安定な Windows 依存テストにしない。
 
-### フェーズ1: コア安全ロジック（依存の少ない純粋関数から実装）
+### フェーズ1: コア安全ロジック
 
-2. `allowlist.ts` 作成
+4. `allowlist.ts` 作成
    - `OPENABLE_EXTENSIONS` / `SHORTCUT_TARGET_FILE_EXTENSIONS` の定義のみ。
-3. `validators.ts` 作成
+5. `validators.ts` 作成
    - `file` scheme 確認、拡張子照合（小文字化含む）、存在確認、
      `.lnk` リンク先の許可判定ロジック。
-4. `shortcutResolver.ts` 作成
-   - フェーズ0で選定したライブラリを使い `.lnk` → `TargetPath` を抽出する。
-   - `Arguments` / `WorkingDirectory` / アイコン情報は返却しない、または返却しても未使用とする。
-5. `openExternal.ts` 作成
+6. エラーメッセージ定義の整理
+  - SPEC のメッセージを定数化し、`extension.ts` 統合時の文言ぶれを防ぐ。
+
+### フェーズ2: 外部依存を閉じ込める層
+
+7. `shortcutResolver.ts` 作成
+  - フェーズ0で選定したライブラリを使い `.lnk` → `TargetPath` を抽出する。
+  - `Arguments` / `WorkingDirectory` / アイコン情報は返却しない、または返却しても未使用とする。
+8. `openExternal.ts` 作成
    - `vscode.env.openExternal()` の薄いラッパー。
 
-### フェーズ2: 拡張機能本体への統合
+### フェーズ3: 拡張機能本体への統合
 
-6. `extension.ts` 書き換え
+9. `extension.ts` 書き換え
    - `safeOfficeOpener.openSafely` コマンド登録。
    - 各モジュールを呼び出し、SPEC の「エラー処理」表に沿ったメッセージを表示する。
-7. `package.json` contributes 更新
+10. `package.json` contributes 更新
    - コマンド定義と `explorer/context` メニュー、`when` 句（対象拡張子の正規表現）を追加。
 
-### フェーズ3: テスト
+### フェーズ4: 自動テスト
 
-8. 単体テスト: `validators.test.ts`
+11. 単体テスト: `allowlist.test.ts` / `validators.test.ts`
    - allowlist 判定、大文字小文字、`.lnk` リンク先の許可/拒否パターン。
-9. 単体テスト: `shortcutResolver.test.ts`
+12. 単体テスト: `shortcutResolver.test.ts`
    - TargetPath 抽出の正常系・異常系（空/存在しないパス等）。
-10. 結合テスト: `extension.test.ts` 拡充
-    - コンテキストメニューの表示条件、`openExternal()` 呼び出しの確認。
+   - フェーズ0で決めた戦略に従い、fixture または mock によって安定化する。
+13. 結合テスト: `extension.test.ts` 拡充
+   - コマンド実行時の `openExternal()` 呼び出し、および拒否時のエラーメッセージ表示を確認する。
+14. 静的テスト: `package.json` contributes
+   - コマンド ID、タイトル、`explorer/context` メニュー、`when` 条件を自動検証する。
+15. UI スモークテスト: Explorer コンテキストメニュー
+   - Windows 実行限定で、対象拡張子ではメニューが表示され、非対象拡張子では表示されないことを確認する。
+   - 追加ハーネスが必要な場合は optional task として切り出してもよい。
 
-### フェーズ4: 仕上げ
+### フェーズ5: 仕上げ
 
-11. `README.md` 更新
+16. `README.md` 更新
     - 目的、対応拡張子、安全性方針を明記する。
-12. Windows 実機での手動テスト
+17. Windows 実機での手動テスト
     - SPEC の「手動テスト」表に沿って確認する。
 
-各タスクは独立して差分確認・動作確認できる粒度としており、フェーズ1（タスク2〜5）は
-ロジックのみのため確認しやすく、フェーズ2で初めて拡張機能として動作する状態になる。
+各タスクは独立して差分確認・動作確認できる粒度としている。
+フェーズ1は純粋ロジック中心、フェーズ2で外部依存を閉じ込め、フェーズ3で初めて
+拡張機能として動作する状態にする。
+フェーズ4では、既存の拡張テスト基盤で実行しやすい自動テストを優先しつつ、
+UI スモークテストは feasibility を確認したうえで追加する。
